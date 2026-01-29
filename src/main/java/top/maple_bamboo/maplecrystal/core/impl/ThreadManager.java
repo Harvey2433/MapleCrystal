@@ -1,0 +1,124 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  by.radioegor146.nativeobfuscator.Native
+ *  com.google.common.collect.Lists
+ *  net.minecraft.client.network.AbstractClientPlayerEntity
+ *  net.minecraft.entity.Entity
+ *  net.minecraft.util.math.BlockPos
+ */
+package top.maple_bamboo.maplecrystal.core.impl;
+
+import com.google.common.collect.Lists;
+import net.minecraft.client.network.AbstractClientPlayerEntity;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.math.BlockPos;
+import top.maple_bamboo.maplecrystal.Config;
+import top.maple_bamboo.maplecrystal.MapleCrystal;
+import top.maple_bamboo.maplecrystal.api.events.eventbus.EventListener;
+import top.maple_bamboo.maplecrystal.api.events.impl.ClientTickEvent;
+import top.maple_bamboo.maplecrystal.api.events.impl.UpdateEvent;
+import top.maple_bamboo.maplecrystal.api.utils.Wrapper;
+import top.maple_bamboo.maplecrystal.api.utils.render.JelloUtil;
+import top.maple_bamboo.maplecrystal.api.utils.world.BlockUtil;
+import top.maple_bamboo.maplecrystal.mod.modules.Module;
+import top.maple_bamboo.maplecrystal.mod.modules.impl.client.ClientSetting;
+import top.maple_bamboo.maplecrystal.mod.modules.impl.combat.AutoAnchor;
+import top.maple_bamboo.maplecrystal.mod.modules.impl.combat.AutoCrystal;
+import top.maple_bamboo.maplecrystal.mod.modules.impl.render.HoleESP;
+import top.maple_bamboo.maplecrystal.mod.modules.impl.render.PlaceRender;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class ThreadManager
+implements Wrapper {
+    public static final ExecutorService EXECUTOR = Executors.newCachedThreadPool();
+    public static ClientService clientService;
+    public volatile Iterable<Entity> threadSafeEntityList = Collections.emptyList();
+    public volatile List<AbstractClientPlayerEntity> threadSafePlayersList = Collections.emptyList();
+    public volatile boolean tickRunning = false;
+
+    public ThreadManager() {
+        this.init();
+    }
+
+    public void init() {
+        Config.EVENT_BUS.subscribe(this);
+        clientService = new ClientService();
+        clientService.setName("MapleGalaxyCoreService");
+        clientService.setDaemon(true);
+        clientService.start();
+    }
+
+    public Iterable<Entity> getEntities() {
+        return this.threadSafeEntityList;
+    }
+
+    public List<AbstractClientPlayerEntity> getPlayers() {
+        return this.threadSafePlayersList;
+    }
+
+    public void execute(Runnable runnable) {
+        EXECUTOR.execute(runnable);
+    }
+
+    @EventListener(priority=200)
+    public void onEvent(ClientTickEvent event) {
+        Config.POP.onUpdate();
+        Config.SERVER.onUpdate();
+        if (event.isPre()) {
+            JelloUtil.updateJello();
+            this.tickRunning = true;
+            BlockUtil.placedPos.forEach(pos -> PlaceRender.INSTANCE.create((BlockPos)pos));
+            BlockUtil.placedPos.clear();
+            MapleCrystal.PLAYER.onUpdate();
+            if (!Module.nullCheck()) {
+                MapleCrystal.EVENT_BUS.post(UpdateEvent.INSTANCE);
+            }
+        } else {
+            this.tickRunning = false;
+            if (ThreadManager.mc.world == null || ThreadManager.mc.player == null) {
+                return;
+            }
+            this.threadSafeEntityList = Lists.newArrayList((Iterable)ThreadManager.mc.world.getEntities());
+            this.threadSafePlayersList = Lists.newArrayList((Iterable)ThreadManager.mc.world.getPlayers());
+        }
+        if (!clientService.isAlive() || clientService.isInterrupted()) {
+            clientService = new ClientService();
+            clientService.setName("MapleGalaxyExtendedService");
+            clientService.setDaemon(true);
+            clientService.start();
+        }
+    }
+
+    public class ClientService
+    extends Thread {
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    while (true) {
+                        if (ThreadManager.this.tickRunning) {
+                            Thread.onSpinWait();
+                            continue;
+                        }
+                        AutoCrystal.INSTANCE.onThread();
+                        HoleESP.INSTANCE.onThread();
+                        AutoAnchor.INSTANCE.onThread();
+                    }
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    if (ClientSetting.INSTANCE.debug.getValue()) {
+                        CommandManager.sendMessage("\u00a74An error has occurred [Thread] Message: [" + e.getMessage() + "]");
+                    }
+                }
+            }
+        }
+    }
+}
+

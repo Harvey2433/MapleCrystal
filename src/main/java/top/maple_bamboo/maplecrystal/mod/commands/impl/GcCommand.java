@@ -1,0 +1,26 @@
+/*
+ * Decompiled with CFR 0.152.
+ */
+package top.maple_bamboo.maplecrystal.mod.commands.impl;
+
+import top.maple_bamboo.maplecrystal.mod.commands.Command;
+
+import java.util.List;
+
+public class GcCommand
+extends Command {
+    public GcCommand() {
+        super("gc", "");
+    }
+
+    @Override
+    public void runCommand(String[] parameters) {
+        System.gc();
+    }
+
+    @Override
+    public String[] getAutocorrect(int count, List<String> seperated) {
+        return null;
+    }
+}
+

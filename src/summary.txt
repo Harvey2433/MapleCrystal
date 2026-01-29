@@ -1,0 +1,10 @@
+Summary for .\vitality-1.0-remapped.jar
+Decompiled with CFR 0.152
+
+
+top.maple_bamboo.maplecrystal.mod.modules.impl.misc.Bot
+----------------------------
+
+onUpdate(top.maple_bamboo.maplecrystal.api.events.impl.UpdateEvent )
+  Could not resolve type clashes
+  Unable to fully structure code
