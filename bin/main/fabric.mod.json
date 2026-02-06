@@ -11,7 +11,7 @@
   "environment": "*",
   "entrypoints": {
     "main": [
-      "top.maple_bamboo.MapleCrystal.Config"
+      "top.maple_bamboo.maplecrystal.Config"
     ]
   },
   "mixins": [

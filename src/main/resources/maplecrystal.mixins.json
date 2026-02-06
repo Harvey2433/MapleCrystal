@@ -18,6 +18,7 @@
     "accessors.IPlayerMoveC2SPacket",
     "accessors.IPlayerPositionLookS2CPacket",
     "accessors.IPostProcessShader",
+    "accessors.IGameRenderer",
     "accessors.IScreen",
     "accessors.IVec3d",
     "mixins.MixinAbstractBlockState",

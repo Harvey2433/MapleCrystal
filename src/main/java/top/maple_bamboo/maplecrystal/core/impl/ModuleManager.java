@@ -149,6 +149,7 @@ implements Wrapper {
         this.addModule(new Freecam());
         this.addModule(new FreeLook());
         this.addModule(new TimerModule());
+        this.addModule(new AutoPotPlus());
         this.addModule(new Tips());
         this.addModule(new ClientSetting());
         this.addModule(new TextRadar());
